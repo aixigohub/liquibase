@@ -50,9 +50,9 @@
     </scm>
 
     <properties>
-        <liquibase.base.version>4.4.3</liquibase.base.version>
-        <liquibase.version.qualifier>-aixigo-patch.0</liquibase.version.qualifier>
-        <liquibase.version.snapshot>-SNAPSHOT</liquibase.version.snapshot>
+        <liquibase.base.version>4.4.3-aixigo-patch.0</liquibase.base.version>
+        <liquibase.version.qualifier></liquibase.version.qualifier>
+        <liquibase.version.snapshot></liquibase.version.snapshot>
         <liquibase.version>${liquibase.base.version}${liquibase.version.qualifier}${liquibase.version.snapshot}
         </liquibase.version>
         <maven.compiler.source>1.8</maven.compiler.source>
