@@ -1,8 +1,24 @@
 package liquibase.change.core;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import liquibase.CatalogAndSchema;
 import liquibase.Scope;
-import liquibase.change.*;
+import liquibase.change.AbstractTableChange;
+import liquibase.change.ChangeMetaData;
+import liquibase.change.ChangeStatus;
+import liquibase.change.ChangeWithColumns;
+import liquibase.change.CheckSum;
+import liquibase.change.ColumnConfig;
+import liquibase.change.DatabaseChange;
+import liquibase.change.DatabaseChangeProperty;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
@@ -11,7 +27,12 @@ import liquibase.database.core.MySQLDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.datatype.LiquibaseDataType;
-import liquibase.exception.*;
+import liquibase.exception.DatabaseException;
+import liquibase.exception.DateParseException;
+import liquibase.exception.LiquibaseException;
+import liquibase.exception.UnexpectedLiquibaseException;
+import liquibase.exception.ValidationErrors;
+import liquibase.exception.Warnings;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
 import liquibase.io.EmptyLineAndCommentSkippingInputStream;
@@ -35,12 +56,6 @@ import liquibase.util.ObjectUtil;
 import liquibase.util.StreamUtil;
 import liquibase.util.StringUtil;
 import liquibase.util.csv.CSVReader;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.*;
-import java.util.regex.Pattern;
 
 import static java.util.ResourceBundle.getBundle;
 import static liquibase.change.ChangeParameterMetaData.ALL;
@@ -355,8 +370,23 @@ public class LoadDataChange extends AbstractTableChange implements ChangeWithCol
                             // columnConfig did not specify a type
                             valueConfig.setValue(value);
                         } else if (columnConfig.getTypeEnum() == LOAD_DATA_TYPE.UNKNOWN) {
-                            // columnConfig did not match a specific type
-                            valueConfig.setValue(value);
+                            if (isTimestampWithZone( columnConfig ) && database instanceof PostgresDatabase ) {
+                                try {
+                                    // Need the column type for handling 'NOW' or 'TODAY' type column value
+                                    valueConfig.setType(columnConfig.getType());
+                                    if (value != null) {
+                                        valueConfig.setValueDate(value);
+                                    } else {
+                                        valueConfig.setValueDate(columnConfig.getDefaultValueDate());
+                                    }
+                                } catch (DateParseException e) {
+                                    throw new UnexpectedLiquibaseException(e);
+                                }
+                            }
+                            else {
+                                // columnConfig did not match a specific type
+                                valueConfig.setValue( value );
+                            }
                         } else if (columnConfig.getTypeEnum() == LOAD_DATA_TYPE.BOOLEAN) {
                             if (value == null) { // TODO getDefaultValueBoolean should use BooleanParser.parseBoolean also for consistent behaviour
                                 valueConfig.setValueBoolean(columnConfig.getDefaultValueBoolean());
@@ -576,6 +606,16 @@ public class LoadDataChange extends AbstractTableChange implements ChangeWithCol
                 }
             }
         }
+    }
+
+    private boolean isTimestampWithZone( ColumnConfig columnConfig )
+    {
+        final String type = columnConfig.getType();
+        if( type == null ) {
+            return false;
+        }
+
+        return type.toLowerCase().matches( "timestamp.* with .*zone" );
     }
 
     private boolean isLoggingExecutor(Database database) {

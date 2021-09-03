@@ -1,8 +1,9 @@
 package liquibase.util;
 
-import org.junit.Test;
-
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -47,17 +48,31 @@ public class ISODateFormatTest {
     }
 
     @Test
-    public void isoDateFormatWithUTCTimeZone() throws Exception {
-        Date date = dateFormat.parse("2011-04-21T10:13:40.084004Z");
+    public void isoDateFormatWithZoneOffsetWithoutNanos() throws Exception {
+        Date date = dateFormat.parse("2021-08-24T09:51:26+02:00");
         String result = dateFormat.format(date);
-        assertEquals("2011-04-21T10:13:40.084004", result);
+        assertEquals("2021-08-24T09:51:26", result);
+    }
+
+    @Test
+    public void isoDateFormatWithUTCTimeZone() throws Exception {
+        String zonedDateTimeString = "2011-04-21T10:13:40.084004Z";
+        Date date = dateFormat.parse(zonedDateTimeString);
+        assertEquals(
+           ZonedDateTime.parse( zonedDateTimeString ).toEpochSecond(),
+           date.toInstant().getEpochSecond()
+        );
     }
 
     @Test
     public void isoDateFormatWithESTTimeZone() throws Exception {
-        Date date = dateFormat.parse("2011-04-21T10:13:40.084004-05:00");
-        String result = dateFormat.format(date);
-        assertEquals("2011-04-21T10:13:40.084004", result);
+        String zonedDateTimeString = "2011-04-21T10:13:40.084004-05:00";
+        Date date = dateFormat.parse(zonedDateTimeString);
+
+        assertEquals(
+           ZonedDateTime.parse( zonedDateTimeString ).toEpochSecond(),
+           date.toInstant().getEpochSecond()
+        );
     }
 
     @Test
