@@ -62,7 +62,7 @@ Optional Args:
 
         expectedOutput = [
                 Pattern.compile("""
-- Database updated at \\d+/\\d+.+. Applied 4 changeset\\(s\\) in \\d+.\\d+s, DeploymentId: \\d+
+- Database updated at \\d+.+ \\d+.+\\. Applied 4 changeset\\(s\\) in \\d+.\\d+s, DeploymentId: \\d+
   db/changelog/db.changelog-master.xml::1::nvoxland
   db/changelog/sql/create_test2.sql::raw::includeAll
   db/changelog/sql/create_test3.sql::raw::includeAll

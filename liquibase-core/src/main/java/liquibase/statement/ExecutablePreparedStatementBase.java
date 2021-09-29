@@ -5,6 +5,7 @@ import liquibase.change.ColumnConfig;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.Database;
 import liquibase.database.PreparedStatementFactory;
+import liquibase.database.core.OracleDatabase;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.datatype.LiquibaseDataType;
 import liquibase.exception.DatabaseException;
@@ -129,7 +130,11 @@ public abstract class ExecutablePreparedStatementBase implements ExecutablePrepa
         if (col.getValue() != null) {
             LOG.fine("value is string/UUID/blob = " + col.getValue());
             if (col.getType() != null && col.getType().equalsIgnoreCase(LoadDataChange.LOAD_DATA_TYPE.UUID.name())) {
-                stmt.setObject(i, UUID.fromString(col.getValue()));
+                if( database instanceof OracleDatabase ) {
+                    stmt.setString( i, col.getValue().replaceAll( "-", "" ) );
+                } else {
+                    stmt.setObject( i, UUID.fromString( col.getValue() ) );
+                }
             } else if (col.getType() != null && col.getType().equalsIgnoreCase(LoadDataChange.LOAD_DATA_TYPE.OTHER.name())) {
                 stmt.setObject(i, col.getValue(), Types.OTHER);
             } else if (LoadDataChange.LOAD_DATA_TYPE.BLOB.name().equalsIgnoreCase(col.getType())) {
